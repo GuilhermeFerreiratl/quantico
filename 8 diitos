@@ -1,0 +1,114 @@
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// Função que aplica o Algoritmo de Grover real para descobrir 1 dígito (0 a 9)
+int resolverDigitoQuantico(int digitoAlvo, int pulsosQuanticos) {
+    // 10 estados possíveis (dígitos 0 a 9)
+    double amplitudes[10];
+    double amplitudeInicial = 1.0 / sqrt(10.0);
+
+    for (int i = 0; i < 10; i++) {
+        amplitudes[i] = amplitudeInicial;
+    }
+
+    // Executa os pulsos quânticos (Oráculo + Difusão de Grover)
+    for (int p = 1; p <= pulsosQuanticos; p++) {
+        // Oráculo: inverte a amplitude do dígito alvo
+        amplitudes[digitoAlvo] = -amplitudes[digitoAlvo];
+
+        // Difusão: calcula a média e reflete todas as amplitudes
+        double soma = 0.0;
+        for (int i = 0; i < 10; i++) {
+            soma += amplitudes[i];
+        }
+        double media = soma / 10.0;
+
+        for (int i = 0; i < 10; i++) {
+            amplitudes[i] = (2.0 * media) - amplitudes[i];
+        }
+    }
+
+    // Medição quântica real (colapso baseado nas probabilidades |amplitude|^2)
+    double roleta = (double)rand() / RAND_MAX;
+    double acumulado = 0.0;
+
+    for (int i = 0; i < 10; i++) {
+        acumulado += (amplitudes[i] * amplitudes[i]);
+        if (roleta <= acumulado) {
+            return i; // Retorna o dígito medido (0 a 9)
+        }
+    }
+
+    return 9;
+}
+
+int main() {
+    srand(time(0));
+
+    string senhaManual;
+
+    // 1. Pede para você digitar uma senha de 8 dígitos
+    cout << "Digite uma senha manual de 8 digitos (ex: 12345678): ";
+    cin >> senhaManual;
+
+    // Verifica se tem exatamente 8 caracteres
+    if (senhaManual.length() != 8) {
+        cout << "Erro! A senha precisa ter exatamente 8 digitos." << endl;
+        return 1;
+    }
+
+    int digitosAlvo[8];
+    int rands[8];
+
+    // Converte cada caractere digitado em número inteiro e valida se é de 0 a 9
+    for (int i = 0; i < 8; i++) {
+        if (senhaManual[i] < '0' || senhaManual[i] > '9') {
+            cout << "Erro! Digite apenas numeros de 0 a 9." << endl;
+            return 1;
+        }
+        digitosAlvo[i] = senhaManual[i] - '0';
+    }
+
+    cout << "\n==========================================" << endl;
+    cout << "SENHA DEFINIDA: [" << senhaManual << "]" << endl;
+    cout << "==========================================\n" << endl;
+
+    // 2 pulsos quânticos garantem ~96,1% de chance de acerto por dígito
+    int pulsos = 2;
+    int acertos = 0;
+
+    cout << "=== RESULTADO DOS 8 REGISTRADORES QUANTICOS ===" << endl;
+
+    // 2. Cada um dos 8 Rands tenta adivinhar sua respectiva posição
+    for (int i = 0; i < 8; i++) {
+        rands[i] = resolverDigitoQuantico(digitosAlvo[i], pulsos);
+
+        cout << "Rand " << i + 1 << " (" << i + 1 << "o digito) mediu [" << rands[i] << "]";
+        if (rands[i] == digitosAlvo[i]) {
+            cout << " -> ACERTOU!" << endl;
+            acertos++;
+        } else {
+            cout << " -> ERROU (era " << digitosAlvo[i] << ")" << endl;
+        }
+    }
+
+    // 3. Monta a senha final encontrada e calcula a porcentagem
+    double porcentagem = (double(acertos) / 8.0) * 100.0;
+
+    cout << "\n=== RESUMO FINAL ===" << endl;
+    cout << "Senha original:   " << senhaManual << endl;
+    cout << "Senha encontrada: ";
+    for (int i = 0; i < 8; i++) {
+        cout << rands[i];
+    }
+    cout << endl;
+    cout << "Dígitos corretos: " << acertos << " de 8" << endl;
+    cout << "Porcentagem de acerto: " << porcentagem << "%" << endl;
+
+    return 0;
+}
